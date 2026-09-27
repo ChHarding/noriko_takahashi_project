@@ -1,0 +1,3 @@
+Offline validation passed: end-to-end demo, conflict display, revision persistence, empty DONE, invalid REVISE, final chunk storage, EOF interruption, invalid evidence rejection, simulated API failure.
+Live OpenAI request: NOT TESTED (no key configured).
+Demo output contains fictional writing only.

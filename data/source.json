@@ -1,0 +1,87 @@
+{
+  "id": "ethical_conflict_01",
+  "fictional": true,
+  "provenance": "Original synthetic classroom materials created for this prototype; not real studies or research evidence.",
+  "prompt": "Should schools use AI to monitor school-owned student accounts? Write a synthesis that explains the relationship between the two sources, weighs safety against privacy and trust, and supports a qualified position using both texts. Do not simply summarize the sources separately.",
+  "sources": [
+    {
+      "id": "a",
+      "title": "Source A: A case for limited monitoring",
+      "text": "Schools should consider limited AI monitoring of school-owned accounts when it supports timely human help rather than automatic punishment. The pilot included 120 students and lasted four weeks. At fictional Cedar School, the system flagged messages for review by two trained counselors; it did not contact police or assign penalties automatically. In one invented example, a counselor checked in with a student after a flagged message and learned that the student wanted support. The pilot did not compare participating students with a control group, so it could not establish that monitoring improved safety. Supporters argue that a limited loss of privacy may be acceptable if access is restricted, families are informed, and students can challenge mistakes.",
+      "annotations": [
+        {
+          "id": "a_main",
+          "label": "main_idea",
+          "text": "Schools should consider limited AI monitoring of school-owned accounts when it supports timely human help rather than automatic punishment."
+        },
+        {
+          "id": "a_fact",
+          "label": "factual_claim",
+          "text": "The pilot included 120 students and lasted four weeks."
+        },
+        {
+          "id": "a_detail",
+          "label": "supporting_detail",
+          "text": "At fictional Cedar School, the system flagged messages for review by two trained counselors; it did not contact police or assign penalties automatically."
+        },
+        {
+          "id": "a_example",
+          "label": "example",
+          "text": "In one invented example, a counselor checked in with a student after a flagged message and learned that the student wanted support."
+        },
+        {
+          "id": "a_limit",
+          "label": "limitation",
+          "text": "The pilot did not compare participating students with a control group, so it could not establish that monitoring improved safety."
+        },
+        {
+          "id": "a_ethics",
+          "label": "ethical_position",
+          "text": "Supporters argue that a limited loss of privacy may be acceptable if access is restricted, families are informed, and students can challenge mistakes."
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "title": "Source B: A case for protecting trust",
+      "text": "Schools should prioritize confidential support and student trust before adopting routine AI monitoring. In a fictional student council survey, 30 of 50 respondents said monitoring might discourage them from discussing personal concerns in school-owned accounts. This survey measured stated concerns, not observed behavior, and did not represent all students. A student using a quotation in a literature discussion worried that the system could interpret it as a personal threat. Critics propose easier access to counselors, clear reporting channels, and human review of specific concerns as alternatives to routine monitoring. Critics accept that schools have a responsibility to protect students, but argue that protection should not make every student feel permanently watched. Both perspectives support student safety and human judgment; they differ over whether routine monitoring is a proportionate way to achieve those goals.",
+      "annotations": [
+        {
+          "id": "b_main",
+          "label": "main_idea",
+          "text": "Schools should prioritize confidential support and student trust before adopting routine AI monitoring."
+        },
+        {
+          "id": "b_fact",
+          "label": "factual_claim",
+          "text": "In a fictional student council survey, 30 of 50 respondents said monitoring might discourage them from discussing personal concerns in school-owned accounts."
+        },
+        {
+          "id": "b_limit",
+          "label": "limitation",
+          "text": "This survey measured stated concerns, not observed behavior, and did not represent all students."
+        },
+        {
+          "id": "b_example",
+          "label": "example",
+          "text": "A student using a quotation in a literature discussion worried that the system could interpret it as a personal threat."
+        },
+        {
+          "id": "b_detail",
+          "label": "supporting_detail",
+          "text": "Critics propose easier access to counselors, clear reporting channels, and human review of specific concerns as alternatives to routine monitoring."
+        },
+        {
+          "id": "b_ethics",
+          "label": "ethical_position",
+          "text": "Critics accept that schools have a responsibility to protect students, but argue that protection should not make every student feel permanently watched."
+        },
+        {
+          "id": "b_common",
+          "label": "main_idea",
+          "text": "Both perspectives support student safety and human judgment; they differ over whether routine monitoring is a proportionate way to achieve those goals."
+        }
+      ]
+    }
+  ]
+}
