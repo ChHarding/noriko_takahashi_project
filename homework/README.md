@@ -1,0 +1,1 @@
+# noriko_takahashi_project
