@@ -12,4 +12,3 @@ The planned system will work like this:
 
 I plan to use Python and a free LLM API for the feedback, and HTML, CSS, JavaScript, and Flask for the webpage.
 
-The current version runs in the terminal with simulated feedback. See [Version 1 progress report A](progress_report_A.md) for the current status and testing steps.
