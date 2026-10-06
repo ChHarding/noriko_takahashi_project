@@ -1,0 +1,2 @@
+# No external Python packages are required for Version 1.
+# The server uses only the Python standard library.

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Version 1 Real-Time Input Test</title>
+<style>
+body { font-family: Arial, sans-serif; max-width: 850px; margin: 40px auto; padding: 0 20px; }
+textarea { width: 100%; min-height: 360px; box-sizing: border-box; padding: 14px; font-size: 17px; line-height: 1.5; }
+button { margin-top: 12px; padding: 8px 14px; }
+#status { margin-top: 12px; white-space: pre-wrap; font-family: monospace; }
+.small { color: #555; }
+</style>
+</head>
+<body>
+<h1>Version 1: Real-Time Input Test</h1>
+<p class="small">A new sentence is sent after . ? !. A revision is sent when you begin editing a different sentence.</p>
+<textarea id="editor" placeholder="Start writing here..."></textarea>
+<br>
+<button id="endButton">End Session</button>
+<div id="status">Starting session...</div>
+
+<script>
+const editor = document.getElementById("editor");
+const endButton = document.getElementById("endButton");
+const statusBox = document.getElementById("status");
+
+let sessionId = null;
+let previousText = "";
+let revisionSentenceNumber = null;
+let sessionEnded = false;
+
+// Send data to Python.
+async function sendToServer(path, data) {
+    const response = await fetch(path, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    });
+    return await response.json();
+}
+
+// Find where the text first changed.
+function findChangePosition(oldText, newText) {
+    let position = 0;
+
+    while (
+        position < oldText.length &&
+        position < newText.length &&
+        oldText[position] === newText[position]
+    ) {
+        position = position + 1;
+    }
+
+    return position;
+}
+
+// Count which sentence contains a position in the text.
+function findSentenceNumber(text, position) {
+    let sentenceNumber = 0;
+
+    for (let i = 0; i < position; i++) {
+        if (text[i] === "." || text[i] === "?" || text[i] === "!") {
+            sentenceNumber = sentenceNumber + 1;
+        }
+    }
+
+    return sentenceNumber;
+}
+
+// Get one sentence from the draft by its number.
+function getSentence(text, sentenceNumber) {
+    let start = 0;
+    let currentNumber = 0;
+
+    for (let i = 0; i < text.length; i++) {
+        if (text[i] === "." || text[i] === "?" || text[i] === "!") {
+            if (currentNumber === sentenceNumber) {
+                return text.slice(start, i + 1).trim();
+            }
+
+            currentNumber = currentNumber + 1;
+            start = i + 1;
+        }
+    }
+
+    if (currentNumber === sentenceNumber) {
+        return text.slice(start).trim();
+    }
+
+    return "";
+}
+
+// Send a finished sentence/revision to Python.
+async function sendSentence(type, sentenceNumber, draft) {
+    const sentence = getSentence(draft, sentenceNumber);
+
+    if (sentence === "") {
+        return;
+    }
+
+    await sendToServer("/sentence", {
+        session_id: sessionId,
+        type: type,
+        sentence_number: sentenceNumber,
+        sentence: sentence,
+        current_draft: draft
+    });
+
+    statusBox.textContent = "SENT TO SERVER (" + type + "): " + sentence;
+}
+
+// This runs after every typing, deletion, paste, or revision.
+editor.addEventListener("input", async function (event) {
+    if (sessionId === null || sessionEnded === true) {
+        return;
+    }
+
+    const currentText = editor.value;
+    const changePosition = findChangePosition(previousText, currentText);
+    const oldSentenceNumber = findSentenceNumber(previousText, changePosition);
+    const newSentenceNumber = findSentenceNumber(currentText, changePosition);
+
+    // Save every edit, including deletions.
+    await sendToServer("/edit", {
+        session_id: sessionId,
+        before: previousText,
+        after: currentText,
+        change_position: changePosition,
+        cursor: editor.selectionStart
+    });
+
+    // If the edit was inside a sentence that was already finished,
+    // the student is revising an existing sentence.
+    const oldSentence = getSentence(previousText, oldSentenceNumber);
+    const wasFinishedSentence = oldSentence.endsWith(".") || oldSentence.endsWith("?") || oldSentence.endsWith("!");
+
+    if (wasFinishedSentence === true) {
+        // If the student moved from one revised sentence to another,
+        // the previous revision is finished.
+        if (
+            revisionSentenceNumber !== null &&
+            revisionSentenceNumber !== newSentenceNumber
+        ) {
+            await sendSentence("revision", revisionSentenceNumber, currentText);
+        }
+
+        revisionSentenceNumber = newSentenceNumber;
+    }
+
+    // When the student finishes a new sentence with . ? !, send it.
+    let insertedText = event.data;
+    if (insertedText === null) {
+        insertedText = "";
+    }
+
+    if (
+        insertedText.includes(".") ||
+        insertedText.includes("?") ||
+        insertedText.includes("!")
+    ) {
+        const finishedSentenceNumber = findSentenceNumber(currentText, editor.selectionStart - 1);
+
+        // Do not treat punctuation typed during an active revision as a new sentence.
+        if (revisionSentenceNumber === null) {
+            await sendSentence("new_sentence", finishedSentenceNumber, currentText);
+        }
+    }
+
+    previousText = currentText;
+});
+
+// Finish the session. If a revision is still active, send it first.
+async function endSession() {
+    if (sessionId === null || sessionEnded === true) {
+        return;
+    }
+
+    if (revisionSentenceNumber !== null) {
+        await sendSentence("revision", revisionSentenceNumber, editor.value);
+    }
+
+    sessionEnded = true;
+
+    const result = await sendToServer("/end", {
+        session_id: sessionId,
+        current_draft: editor.value
+    });
+
+    editor.disabled = true;
+    endButton.disabled = true;
+    statusBox.textContent = "SESSION ENDED\nSentences sent: " + result.sentences_sent + "\nSaved: " + result.file;
+}
+
+endButton.addEventListener("click", endSession);
+
+// Start the session when the page opens.
+async function startSession() {
+    const result = await sendToServer("/start", {});
+    sessionId = result.session_id;
+    statusBox.textContent = "Session started.";
+    editor.focus();
+}
+
+startSession();
+</script>
+</body>
+</html>
