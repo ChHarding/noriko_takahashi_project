@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ITS | Module 1</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0d0e12; color: #eee; font: 16px system-ui, sans-serif; }
+    header { padding: 16px 24px; border-bottom: 1px solid #35363d; display: flex; justify-content: space-between; gap: 12px; }
+    main { display: grid; grid-template-columns: 60% 40%; height: calc(100vh - 62px); }
+    section { padding: 28px; overflow: auto; }
+    #material { border-right: 1px solid #35363d; }
+    .muted { color: #a4a5b2; }
+    .panel { background: #202128; padding: 20px; border-radius: 12px; margin: 15px 0; line-height: 1.6; }
+    .tag { font-size: 12px; color: #b4b4c8; letter-spacing: .08em; }
+    .todo { border: 1px dashed #777992; border-radius: 9px; padding: 18px; color: #c2c4d5; background: #252630; }
+    button { background: #6565d8; border: 0; color: white; padding: 11px 17px; border-radius: 8px; cursor: pointer; margin: 5px 5px 5px 0; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    select { background: #24252c; color: #eee; border: 1px solid #555765; border-radius: 6px; padding: 8px; }
+    .controls { margin-top: 18px; }
+    @media(max-width:700px) { main { grid-template-columns: 1fr; height: auto; } #material { border-right: 0; border-bottom: 1px solid #35363d; } }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>ITS · Module 1: Identifying Core Intention</strong>
+    <span id="status" class="muted">Instruction</span>
+  </header>
+  <main>
+    <!-- TODO: Render instructional content loaded from the Python backend here. -->
+    <section id="material" aria-label="Instructional materials">
+      <h2 id="material-title">Instruction</h2>
+      <div id="material-content" class="todo">[TODO: Load actual Module 1 instruction from Python]</div>
+    </section>
+    <section id="tutor" aria-label="AI tutor">
+      <div class="tag">AI TUTOR · RULE-BASED FRAMEWORK</div>
+      <h2>Tutor</h2>
+      <div id="tutor-message" class="panel" aria-live="polite"></div>
+      <!-- TODO: Display rule-based feedback alongside the corresponding practice item. -->
+      <div id="feedback-area"></div>
+      <div id="tutor-controls" class="controls"></div>
+      <div class="panel">
+        <label for="condition">Feedback timing (developer preview)</label>
+        <select id="condition">
+          <option value="immediate">Immediate</option>
+          <option value="end">End of session</option>
+        </select>
+        <p class="muted" style="font-size:13px">TODO: Assign experimental condition through Python instead of this preview selector.</p>
+      </div>
+    </section>
+  </main>
+  <script>
+    // TODO: Connect to a Python Flask backend (not connected yet).
+    // TODO: GET /api/module/1 to load instructions, example, practice items, and knowledge check.
+    // TODO: POST /api/feedback to evaluate selected sentences without exposing answer keys in advance.
+    // TODO: Save responses and timestamps to the backend.
+    // TODO: Keep knowledge-check answers and scoring on the backend; show no tutor assistance.
+
+    const phases = ['instruction', 'example', 'practice', 'knowledge'];
+    let phaseIndex = 0;
+    const $ = id => document.getElementById(id);
+
+    function button(label, onClick) {
+      const element = document.createElement('button');
+      element.textContent = label;
+      element.addEventListener('click', onClick);
+      $('tutor-controls').append(element);
+    }
+
+    function render() {
+      const phase = phases[phaseIndex];
+      $('status').textContent = phase === 'knowledge' ? 'Knowledge check' : phase[0].toUpperCase() + phase.slice(1);
+      $('tutor-controls').replaceChildren();
+      $('feedback-area').replaceChildren();
+      const titles = {
+        instruction: 'Instruction', example: 'Worked example',
+        practice: 'Practice items', knowledge: 'Knowledge check'
+      };
+      const placeholders = {
+        instruction: '[TODO: Load actual Module 1 instruction from Python]',
+        example: '[TODO: Load actual worked example and enable sentence highlighting]',
+        practice: '[TODO: Load actual practice items and enable sentence highlighting]',
+        knowledge: '[TODO: Load actual knowledge-check items; disable tutor feedback]'
+      };
+      const messages = {
+        instruction: 'Please read the instruction. Click Done when you are ready.',
+        example: 'Look at the example. Which sentence expresses the author’s core intention?',
+        practice: 'Highlight the sentence that best expresses the author’s core intention.',
+        knowledge: 'Now start the knowledge check. I cannot provide help during this test.'
+      };
+      $('material-title').textContent = titles[phase];
+      $('material-content').textContent = placeholders[phase];
+      $('tutor-message').textContent = messages[phase];
+
+      if (phase === 'instruction') button('Done', () => { phaseIndex = 1; render(); });
+      if (phase === 'example') {
+        // TODO: Wait for a submitted highlight; request Python feedback and reveal the correct sentence.
+        button('Preview practice screen', () => { phaseIndex = 2; render(); });
+      }
+      if (phase === 'practice') {
+        // TODO: Immediate condition: display feedback after each item submission.
+        // TODO: End condition: collect all responses, then reveal the same feedback in review.
+        // TODO: Align feedback vertically with the corresponding item.
+        button('Preview knowledge check', () => { phaseIndex = 3; render(); });
+      }
+      if (phase === 'knowledge') {
+        // TODO: Replace preview navigation with independent item submission and backend scoring.
+        button('Back to instruction', () => { phaseIndex = 0; render(); });
+      }
+    }
+    render();
+  </script>
+</body>
+</html>
