@@ -1,0 +1,51 @@
+# Version 2 Progress Report A
+
+## Progress from the previous report
+
+Complete TODO from the previous one.
+Connect interface with backend system. 
+created json files for items.
+Used Groq API for llm and complete api connection. 
+Deployed this repo to streamlit so now we can look at how the system works thought streamlit (without private server)
+
+The current prototype focuses on **Module 1: Finding the Central Message**.
+
+## Learning Flow
+
+1. **Instruction:** Students read instructional materials and answer questions with AI tutor support.
+2. **Worked Example:** Students review an example.
+3. **Practice:** Students complete 3 items and receive feedback.
+4. **Knowledge Test:** Students complete 3 items without feedback.
+
+## Feedback Conditions
+
+- **Condition 1:** Simple, predefined feedback.
+- **Condition 2:** LLM-generated feedback based on item-specific prompts.
+- **Condition 3:** Students explain their reasoning before receiving LLM-generated feedback.
+
+## Implementation
+
+- **Python & Streamlit:** Web interface and application logic.
+- **Groq API (`openai/gpt-oss-20b`):** LLM-generated feedback.
+- **JSON:** Instructional materials and feedback prompts.
+- **JSONL:** Interaction logging for prototype testing.
+
+## Run Locally
+
+```bash
+pip install -r requirements.txt
+streamlit run main.py
+```
+
+Add `GROQ_API_KEY` to `.streamlit/secrets.toml` before running.
+
+## try module1
+https://noriko-module1.streamlit.app/
+
+## Next Steps
+
+- Validate LLM-generated feedback. (especially, adding the loading icon? while waiting the response from the llm)
+- Improve the interface and interaction logging.
+
+Note: This public repository uses demonstration materials, not the original research instructional materials.
+
