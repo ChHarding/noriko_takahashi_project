@@ -30,7 +30,8 @@ PARTS=COURSE['parts']
 
 def init(condition):
     st.session_state.update(pid=str(uuid.uuid4()), condition=condition, started=True,
-      part=0, view='instruction', instruction_done=[False]*3, practice_indices=[0]*3,
+      part=0, view='instruction', instruction_positions=[0, 0, 0], instruction_responses=[[], [], []], 
+      instruction_waiting=[False, False, False],instruction_done=[False]*3, practice_indices=[0]*3,
       submitted=False, selection=None, sentence=None, reasoning='', instruction_reply=None,
       instruction_answer='', instruction_sent=[False]*3, completed=False, test_answers={})
     track('session_started')
@@ -115,38 +116,138 @@ else:
     st.caption(f'Part {s.part+1} of 3 · Practice item {min(s.practice_indices[s.part]+1,len(part["practice"]))} of {len(part["practice"])}')
 st.progress(completed/total,text=f'Course progress · {completed} of {total} activities completed')
 
-if s.view=='instruction':
+
+if s.view == 'instruction':
     st.title(f'Part {s.part+1}. {part["title"]}')
-    st.info('Read the instructional material below. When finished, answer the tutor’s question and click Done. You can return here from Practice Items at any time.')
-    for paragraph in part['instruction']:
-        if paragraph:st.write(paragraph)
-    for example in part['example']:
-        st.subheader('Worked example · '+example['title'])
-        st.write(example['text'])
-        st.markdown('**Answer:** '+example['answer'])
-        st.write(example['explanation'])
-    st.divider()
-    st.subheader('Tutor check')
-    st.write('In your own words, what is the author’s core intention, and how would you identify the main sentence or paragraph?')
-    if not s.instruction_sent[s.part]:
-        answer=st.text_area('Your response',key=f'instruction_response_{s.part}',height=100)
-        if st.button('Done',type='primary',disabled=not answer.strip(),key=f'instruction_done_{s.part}'):
-            s.instruction_answer=answer
-            track('instruction_answer',part=s.part+1,response=answer)
-            try:
-                key=st.secrets.get('GROQ_API_KEY','')
-                if not key:raise RuntimeError('Set GROQ_API_KEY in .streamlit/secrets.toml')
-                with st.spinner('Tutor responding...'):reply=instructional_reply(key,part,answer)
-            except Exception as exc:
-                st.error(f'Tutor unavailable: {exc}');st.stop()
-            s.instruction_reply=reply;s.instruction_sent[s.part]=True
-            if not s.instruction_done[s.part]:s.instruction_done[s.part]=True
-            track('instruction_feedback',part=s.part+1,response=reply)
-            st.rerun()
+
+    st.write(
+        "Read the instruction and answer the tutor's questions. "
+        "You can return here from Practice Items to review."
+    )
+
+    checks = part.get("instruction_checks", [])
+    position = s.instruction_positions[s.part]
+    responses = s.instruction_responses[s.part]
+
+    # Display instructional text progressively.
+    visible_paragraphs = len(part["instruction"])
+
+    if position < len(checks):
+        visible_paragraphs = checks[position]["after_paragraph"] + 1
+
+    for i, paragraph in enumerate(
+        part["instruction"][:visible_paragraphs]
+    ):
+        if paragraph:
+            st.write(paragraph)
+
+        # Show previously completed conversations.
+        for j, check in enumerate(checks[:position]):
+            if check["after_paragraph"] == i:
+                st.markdown("**AI Tutor:** " + check["question"])
+                st.markdown("**Your answer:** " + responses[j]["answer"])
+                st.markdown("**Tutor response:** " + responses[j]["reply"])
+                st.divider()
+
+    # Current conversational checkpoint.
+    if position < len(checks):
+        check = checks[position]
+
+        st.divider()
+        st.markdown("**AI Tutor**")
+        st.write(check["question"])
+
+        if not s.instruction_waiting[s.part]:
+            answer = st.text_area(
+                "Your answer",
+                key=f"instruction_answer_{s.part}_{position}",
+                height=110
+            )
+
+            if st.button(
+                "Done",
+                type="primary",
+                disabled=not answer.strip(),
+                key=f"check_done_{s.part}_{position}"
+            ):
+                key = st.secrets.get("GROQ_API_KEY", "")
+
+                if not key:
+                    st.error("GROQ_API_KEY is missing.")
+                    st.stop()
+
+                try:
+                    with st.spinner("Tutor responding..."):
+                        reply = instructional_reply(
+                            key, part, check, answer
+                        )
+                except Exception as exc:
+                    st.error(f"Tutor unavailable: {exc}")
+                    st.stop()
+
+                responses.append({
+                    "answer": answer,
+                    "reply": reply
+                })
+
+                track(
+                    "instruction_conversation",
+                    part=s.part+1,
+                    checkpoint=position+1,
+                    question=check["question"],
+                    answer=answer,
+                    reply=reply
+                )
+
+                s.instruction_waiting[s.part] = True
+                st.rerun()
+
+        else:
+            st.markdown("**Your answer:** " + responses[position]["answer"])
+            st.markdown("**Tutor response:** " + responses[position]["reply"])
+
+            if st.button(
+                "Continue",
+                type="primary",
+                key=f"check_continue_{s.part}_{position}"
+            ):
+                s.instruction_positions[s.part] += 1
+                s.instruction_waiting[s.part] = False
+                st.rerun()
+
+    # All checkpoints completed.
     else:
-        st.markdown('**Tutor:** '+(s.instruction_reply or ''))
-        st.success(f'You have completed Part {s.part+1} instruction. Go to Practice Items and complete the activities. You can return here to reread the instruction.')
-        if st.button('Go to Practice Items',type='primary'):go('practice')
+        # Display the worked examples.
+        for example in part["example"]:
+            st.subheader("Worked example · " + example["title"])
+            st.write(example["text"])
+            st.markdown("**Answer:** " + example["answer"])
+            st.write(example["explanation"])
+
+        st.divider()
+
+        if not s.instruction_done[s.part]:
+            st.markdown("**AI Tutor**")
+            st.write(
+                f"You've completed Part {s.part+1} instruction! "
+                "Now go to Practice Items and complete the activities. "
+                "You can return to this instruction whenever needed."
+            )
+
+            if st.button("Go to Practice Items", type="primary"):
+                s.instruction_done[s.part] = True
+                track("instruction_completed", part=s.part+1)
+                go("practice")
+
+        else:
+            st.write(
+                "You have completed this instruction. "
+                "You can review it or return to Practice Items."
+            )
+
+            if st.button("Return to Practice Items", type="primary"):
+                go("practice")
+
 
 elif s.view=='practice':
     index=s.practice_indices[s.part]
