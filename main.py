@@ -1,5 +1,6 @@
 """SourceWrite course-project demonstration. Run: streamlit run main.py"""
 import json
+import re
 import uuid
 from pathlib import Path
 import streamlit as st
@@ -19,9 +20,22 @@ h1,h2,h3,p,li,label {color:#f2f2f2!important}
 [data-testid="stTextArea"] textarea {background:#1d1d1d;color:#fff}
 div[data-testid="stVerticalBlockBorderWrapper"] {border-color:#353535}
 hr {border-color:#333}
-/* Keep all answer-choice labels left aligned, including selected choices. */
-.stButton > button {text-align:left!important;justify-content:flex-start!important}
-.stButton > button p {text-align:left!important;width:100%!important}
+/* Scope alignment to the answer-choice containers, including selected buttons. */
+[class*="st-key-choice_group_"] [data-testid="stButton"] button,
+[class*="st-key-choice_group_"] .stButton button {
+    display:flex!important;
+    justify-content:flex-start!important;
+    text-align:left!important;
+    padding-left:16px!important;
+}
+[class*="st-key-choice_group_"] [data-testid="stMarkdownContainer"],
+[class*="st-key-choice_group_"] button div,
+[class*="st-key-choice_group_"] button p {
+    text-align:left!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    margin-left:0!important;
+}
 /* Navigation and Done/Next buttons retain their compact alignment. */
 .stButton > button[kind="primary"] p {color:#111!important}
 .stButton > button[kind="secondary"] p {color:#f0f0f0!important}
@@ -33,13 +47,17 @@ def init(condition):
     st.session_state.update(pid=str(uuid.uuid4()), condition=condition, started=True,
       part=0, view='instruction', instruction_done=[False]*3, practice_indices=[0]*3,
       submitted=False, selection=None, sentence=None, reasoning='', instruction_reply=None,
-      instruction_answer='', instruction_sent=[False]*3, instruction_positions=[0]*3, instruction_responses=[{} for _ in range(3)], completed=False, test_answers={})
+      instruction_answer='', instruction_sent=[False]*3, instruction_positions=[0]*3, instruction_responses=[{} for _ in range(3)], completed=False, test_answers={}, test_started=False)
     track('session_started')
 
 def track(name,**details):
     log_event(st.session_state.pid,st.session_state.condition,name,**details)
 
 def go(view):
+    if st.session_state.get('test_started') and view != 'test':
+        return
+    if view == 'test':
+        st.session_state.test_started = True
     st.session_state.view=view
     st.rerun()
 
@@ -53,6 +71,7 @@ def next_item():
             s.part+=1;s.view='instruction'
         else:
             s.view='test'
+            s.test_started=True
     st.rerun()
 
 def answer_key(item):
@@ -69,15 +88,22 @@ def select_buttons(title, options, selected, key_prefix, disabled=False):
     clicked = None
     # Always create every button, even when one is clicked.
     # Returning inside this loop caused later choices to disappear.
-    for i, text in enumerate(options, 1):
-        if st.button(
-            f'{i}. {text}',
-            key=f'{key_prefix}_{i}',
-            use_container_width=True,
-            type='primary' if selected == i else 'secondary',
-            disabled=disabled,
-        ):
-            clicked = i
+    # Keyed container gives answer choices a stable, targeted CSS selector.
+    with st.container(key=f'choice_group_{key_prefix}'):
+        for i, text in enumerate(options, 1):
+            # The button already supplies the number; remove redundant A/B labels
+            # from the Part 2 tornado comparisons.
+            display_text = str(text)
+            if st.session_state.part == 1 and key_prefix.startswith('instruction_'):
+                display_text = re.sub(r'^Option\s+[AB]\.\s*', '', display_text, flags=re.I)
+            if st.button(
+                f'{i}. {display_text}',
+                key=f'{key_prefix}_{i}',
+                use_container_width=True,
+                type='primary' if selected == i else 'secondary',
+                disabled=disabled,
+            ):
+                clicked = i
     if clicked is not None and clicked != selected:
         # Streamlit reruns the whole page on the next interaction; every choice
         # remains in the tree because we rendered the full loop above.
@@ -107,9 +133,9 @@ test_unlocked=s.practice_indices[2]>=len(PARTS[2]['practice'])
 
 cols=st.columns([1.15,1.4,1.3,3.0],vertical_alignment='center')
 with cols[0]:
-    if st.button('Instruction',use_container_width=True,type='primary' if s.view=='instruction' else 'secondary',disabled=s.completed):go('instruction')
+    if st.button('Instruction',use_container_width=True,type='primary' if s.view=='instruction' else 'secondary',disabled=s.completed or s.test_started):go('instruction')
 with cols[1]:
-    if st.button('Practice Items',use_container_width=True,type='primary' if s.view=='practice' else 'secondary',disabled=not s.instruction_done[s.part] or s.completed):go('practice')
+    if st.button('Practice Items',use_container_width=True,type='primary' if s.view=='practice' else 'secondary',disabled=not s.instruction_done[s.part] or s.completed or s.test_started):go('practice')
 with cols[2]:
     if st.button('Knowledge Test' if test_unlocked else '🔒 Knowledge Test',use_container_width=True,type='primary' if s.view=='test' else 'secondary',disabled=not test_unlocked or s.completed):go('test')
 with cols[3]:st.caption(f'Condition {s.condition}  ·  Course demonstration')
@@ -147,8 +173,28 @@ if s.view=='instruction':
         if kind == 'text':
             st.write(step['text'])
         elif kind == 'example':
-            st.subheader('Example: ' + step['title'])
-            st.write(step['text'])
+            # In Part 3, show the example title once and label each paragraph below it.
+            high_school_prefix = 'High School Start Times — Paragraph '
+            if s.part == 2 and step['title'].startswith(high_school_prefix):
+                paragraph_number = step['title'][len(high_school_prefix):]
+                if paragraph_number == '1':
+                    st.subheader('Example: High School Start Times')
+                st.markdown(f'**Paragraph {paragraph_number}**')
+                st.write(step['text'])
+            else:
+                st.subheader('Example: ' + step['title'])
+            if s.part == 1 and step['title'] == 'Tornado Warning':
+                # Preserve the four original numbered sentences as separate lines.
+                tornado_sentences = [
+                    'This is a tornado warning.',
+                    'Conditions outside have become dangerous.',
+                    'Seek shelter in a sturdy building immediately.',
+                    'Do not stop to take any belongings with you.',
+                ]
+                for number, sentence in enumerate(tornado_sentences, 1):
+                    st.markdown(f'**({number})** {sentence}')
+            elif not (s.part == 2 and step['title'].startswith(high_school_prefix)):
+                st.write(step['text'])
         elif kind == 'explanation':
             st.markdown('**Instructor explanation**')
             st.write(step['text'])
@@ -177,7 +223,8 @@ if s.view=='instruction':
                     options = step.get('options', ['Yes', 'No'])
                     st.markdown('**Correct choice:** ' + options[correct_choice - 1])
                 st.markdown('**Instructor explanation:** ' + step.get('expected_answer', ''))
-                st.markdown('**AI tutor feedback:** ' + saved['reply'])
+                if saved.get('used_llm', False):
+                    st.markdown('**AI tutor feedback:** ' + saved['reply'])
                 if i == pos:
                     if st.button('Continue', type='primary', key=f'instruction_continue_{s.part}_{i}'):
                         next_pos = i + 1
@@ -185,33 +232,37 @@ if s.view=='instruction':
                             next_pos += 1
                         s.instruction_positions[s.part] = next_pos
                         st.rerun()
-                else:
-                    choice = None
-                    if step['input_type'] in ('sentence_reason', 'choice', 'yes_no'):
-                        opts = step.get('options', ['Yes', 'No'])
-                        choice = select_buttons('Select your answer', opts,
-                            s.get(f'instruction_choice_{s.part}_{i}'),
-                            f'instruction_option_{s.part}_{i}')
-                        s[f'instruction_choice_{s.part}_{i}'] = choice
-                    answer = ''
-                    if step['input_type'] in ('text', 'sentence_reason'):
-                        answer = st.text_area('Why? Explain your answer' if step['input_type']=='sentence_reason' else 'Your answer',
-                            key=f'instruction_text_{s.part}_{i}', height=110)
-                    ready = (choice is not None if step['input_type'] in ('choice','yes_no') else
-                             bool(answer.strip()) if step['input_type']=='text' else
-                             choice is not None and bool(answer.strip()))
-                    if st.button('Done', type='primary', disabled=not ready,
-                                 key=f'instruction_done_{s.part}_{i}'):
-                        opts = step.get('options', ['Yes','No'])
-                        selected_label = opts[choice-1] if choice is not None else ''
-                        display = (f'{selected_label} — {answer}' if choice is not None and answer.strip()
-                                   else selected_label or answer)
+            else:
+                choice = None
+                if step['input_type'] in ('sentence_reason', 'choice', 'yes_no'):
+                    opts = step.get('options', ['Yes', 'No'])
+                    choice = select_buttons('Select your answer', opts,
+                        s.get(f'instruction_choice_{s.part}_{i}'),
+                        f'instruction_option_{s.part}_{i}')
+                    s[f'instruction_choice_{s.part}_{i}'] = choice
+                answer = ''
+                if step['input_type'] in ('text', 'sentence_reason'):
+                    answer = st.text_area('Why? Explain your answer' if step['input_type']=='sentence_reason' else 'Your answer',
+                        key=f'instruction_text_{s.part}_{i}', height=110)
+                ready = (choice is not None if step['input_type'] in ('choice','yes_no') else
+                         bool(answer.strip()) if step['input_type']=='text' else
+                         choice is not None and bool(answer.strip()))
+                if st.button('Done', type='primary', disabled=not ready,
+                             key=f'instruction_done_{s.part}_{i}'):
+                    opts = step.get('options', ['Yes','No'])
+                    selected_label = opts[choice-1] if choice is not None else ''
+                    display = (f'{selected_label} — {answer}' if choice is not None and answer.strip()
+                               else selected_label or answer)
+                    # Only typed instructional answers require the LLM.
+                    # Choice-only questions use the instructor's predetermined key.
+                    needs_llm = step['input_type'] in ('text', 'sentence_reason')
+                    if needs_llm:
                         key = st.secrets.get('GROQ_API_KEY', '')
                         if not key:
                             st.error('GROQ_API_KEY is missing from Streamlit secrets.')
                             st.stop()
                         check = dict(step)
-                        check['guidance'] = step.get('guidance','')
+                        check['guidance'] = step.get('guidance', '')
                         check['expected_answer'] = step['expected_answer']
                         check['selected_choice'] = selected_label
                         check['correct_selection'] = step.get('correct_selection')
@@ -224,10 +275,13 @@ if s.view=='instruction':
                         if not reply.strip():
                             st.error('Tutor returned an empty response. Please try again.')
                             st.stop()
-                        responses[i] = {'display':display,'reply':reply,'selection':choice,'reason':answer}
-                        track('instruction_answer',part=s.part+1,step=i,answer=display)
+                    else:
+                        reply = ''
+                    responses[i] = {'display':display,'reply':reply,'selection':choice,'reason':answer,'used_llm':needs_llm}
+                    track('instruction_answer',part=s.part+1,step=i,answer=display)
+                    if needs_llm:
                         track('instruction_feedback',part=s.part+1,step=i,response=reply)
-                        st.rerun()
+                    st.rerun()
             question_index += 1
     if pos >= len(steps):
         st.divider()
@@ -286,40 +340,100 @@ elif s.view=='practice':
             st.rerun()
     else:
         st.divider()
-        st.subheader('Answer and feedback')
-        st.markdown('**Your choice:** '+(f'Sentence {s.selection}' if item['kind']=='sentence' else f'Paragraph {s.selection}, Sentence {s.sentence}'))
-        st.markdown('**Your answer:** '+('Correct' if selected_correct(item) else 'Incorrect'))
-        st.markdown('**Correct answer:** '+answer_key(item))
-        if s.condition in (2,3,4):
-            st.markdown('**Instructor explanation:** '+item['reason'])
-        if s.condition==4:
-            st.markdown('**Feedback on your explanation:** '+s.get('personalized',''))
+        correct = selected_correct(item)
+        correct_label = answer_key(item)
+        # Present one clear, condition-specific response. Streamlit's native
+        # success/error containers provide accessible green/red visual cues.
+        if correct:
+            message = "**Correct!**"
+        else:
+            message = f"**Incorrect.** The correct answer is **{correct_label}**."
+
+        if s.condition in (2, 3, 4):
+            reason = str(item.get('reason', '')).strip()
+            if reason:
+                message += f"\n\n{reason}"
+        if s.condition == 4:
+            feedback = str(s.get('personalized', '')).strip()
+            if feedback:
+                message += f"\n\n**Feedback on your explanation:** {feedback}"
+
+        if correct:
+            st.success(message, icon="✅")
+        else:
+            st.error(message, icon="❌")
         if st.button('Next Item',type='primary',key=f'next_{item["id"]}'):
             next_item()
 
 elif s.view=='test':
+    # Entering the test is irreversible: earlier tabs remain locked.
+    s.test_started = True
     st.title('Knowledge Test')
-    st.write('Complete all questions, then click Submit at the bottom. No answers or feedback will be shown.')
-    with st.form('knowledge_test_form'):
-        for i,item in enumerate(COURSE['test'],1):
-            st.subheader(f'Question {i}')
-            st.write(item['question'])
-            if item['kind']=='mc':
-                s.test_answers[item['id']]=st.selectbox('Choose an answer', ['— Select —']+item['options'],key='test_'+item['id'])
-            elif item['kind']=='sentence':
-                for j,sentence in enumerate(item['sentences'],1):st.write(f'{j}. {sentence}')
-                s.test_answers[item['id']]=st.selectbox('Main sentence',['— Select —']+list(range(1,len(item['sentences'])+1)),key='test_'+item['id'])
+    st.write('Answer all questions and click Submit Knowledge Test at the bottom. You cannot return to Instruction or Practice Items. No feedback will be shown.')
+
+    # Native Streamlit buttons cannot be placed in a st.form. Keep the answers
+    # in session state so all questions remain visible and editable on reruns.
+    for i, item in enumerate(COURSE['test'], 1):
+        item_id = item['id']
+        st.subheader(f'Question {i}')
+        st.write(item['question'])
+        saved = s.test_answers.get(item_id)
+
+        if item['kind'] == 'mc':
+            selected = select_buttons('Select one answer', item['options'],
+                                      saved if isinstance(saved, int) else None,
+                                      f'test_mc_{item_id}')
+            if selected is not None:
+                s.test_answers[item_id] = selected
+
+        elif item['kind'] == 'sentence':
+            selected = select_buttons('Select the main sentence', item['sentences'],
+                                      saved if isinstance(saved, int) else None,
+                                      f'test_sentence_{item_id}')
+            if selected is not None:
+                s.test_answers[item_id] = selected
+
+        elif item['kind'] == 'paragraph':
+            paragraphs = item['paragraphs']
+            current = saved if isinstance(saved, dict) else {}
+            current_paragraph = current.get('paragraph')
+            current_sentence = current.get('sentence')
+            chosen_paragraph = select_buttons('Select the main paragraph', paragraphs,
+                                               current_paragraph,
+                                               f'test_paragraph_{item_id}')
+            if chosen_paragraph != current_paragraph:
+                current_sentence = None
+            if chosen_paragraph is not None:
+                sentences = get_sentences(paragraphs[chosen_paragraph - 1])
+                chosen_sentence = select_buttons('Select the main sentence in that paragraph',
+                                                  sentences, current_sentence,
+                                                  f'test_paragraph_sentence_{item_id}')
             else:
-                for j,para in enumerate(item['paragraphs'],1):st.write(f'**Paragraph {j}.** {para}')
-                para=st.selectbox('Main paragraph',['— Select —',1,2,3],key='test_para_'+item['id'])
-                sentence=st.selectbox('Main sentence',['— Select —',1,2,3,4,5,6,7,8],key='test_sent_'+item['id'])
-                s.test_answers[item['id']]={'paragraph':para,'sentence':sentence}
-            st.divider()
-        submitted=st.form_submit_button('Submit Knowledge Test',type='primary')
-    if submitted:
-        def complete(v):return all(x!='— Select —' for x in v.values()) if isinstance(v,dict) else v!='— Select —'
-        if not all(complete(x) for x in s.test_answers.values()):
-            st.warning('Please answer every question before submitting.')
+                chosen_sentence = None
+            s.test_answers[item_id] = {'paragraph': chosen_paragraph,
+                                       'sentence': chosen_sentence}
+
+        elif item['kind'] == 'text':
+            s.test_answers[item_id] = st.text_area('Type your answer',
+                                                   value=saved if isinstance(saved, str) else '',
+                                                   key=f'test_text_{item_id}')
+        st.divider()
+
+    def answered(item):
+        value = s.test_answers.get(item['id'])
+        if item['kind'] == 'paragraph':
+            return isinstance(value, dict) and value.get('paragraph') is not None and value.get('sentence') is not None
+        if item['kind'] == 'text':
+            return isinstance(value, str) and bool(value.strip())
+        return isinstance(value, int) and value >= 1
+
+    unanswered = [i for i, item in enumerate(COURSE['test'], 1) if not answered(item)]
+    if st.button('Submit Knowledge Test', type='primary', key='submit_knowledge_test'):
+        if unanswered:
+            st.warning('Please complete every question before submitting: ' +
+                       ', '.join(f'Question {i}' for i in unanswered))
         else:
-            track('knowledge_test_submitted',answers=dict(s.test_answers))
-            s.completed=True;track('module_completed');st.rerun()
+            track('knowledge_test_submitted', answers=dict(s.test_answers))
+            s.completed = True
+            track('module_completed')
+            st.rerun()
