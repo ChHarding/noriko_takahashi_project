@@ -27,7 +27,7 @@
             "As always, let me know if you have any questions."
           ],
           "correct_sentence": 2,
-          "reason": "The selected sentence best communicates the author’s core intention, rather than merely supplying background or supporting details."
+          "reason": "Sentence 2 directly reminds students of the assignment deadline and the absence of extensions. The greeting and offer to answer questions are supporting courtesies."
         },
         {
           "id": "p1_2",
@@ -40,7 +40,7 @@
             "Tomorrow, the water in Building B will be temporarily shut off from 9:00 AM to noon while plumbers repair a main valve."
           ],
           "correct_sentence": 4,
-          "reason": "The selected sentence best communicates the author’s core intention, rather than merely supplying background or supporting details."
+          "reason": "Sentence 4 announces the temporary water shutdown, including when and where it will happen. The earlier sentences provide background and reassurance."
         },
         {
           "id": "p1_3",
@@ -53,7 +53,7 @@
             "To reschedule, I will send out a poll later this evening so we can figure out a makeup date that works for everyone."
           ],
           "correct_sentence": 2,
-          "reason": "The selected sentence best communicates the author’s core intention, rather than merely supplying background or supporting details."
+          "reason": "Sentence 2 announces that today’s debate club meeting is canceled. The room conflict explains why, and the poll describes a future rescheduling step."
         },
         {
           "id": "p1_4",
@@ -66,7 +66,7 @@
             "We will keep your resume on file for future opportunities that may be a good fit."
           ],
           "correct_sentence": 3,
-          "reason": "The selected sentence best communicates the author’s core intention, rather than merely supplying background or supporting details."
+          "reason": "Sentence 3 communicates the hiring decision: another candidate was selected. The other sentences express appreciation and discuss possible future opportunities."
         }
       ],
       "instruction_checks": [
