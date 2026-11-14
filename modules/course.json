@@ -68,6 +68,20 @@
           "correct_sentence": 3,
           "reason": "The selected sentence best communicates the author’s core intention, rather than merely supplying background or supporting details."
         }
+      ],
+      "instruction_checks": [
+        {
+          "after_paragraph": 0,
+          "question": "In your own words, what is an author’s core intention?",
+          "expected_answer": "What the author wants the audience to do, feel, or think.",
+          "guidance": "Accept paraphrases; distinguish the author’s intention from the topic of the text."
+        },
+        {
+          "after_paragraph": 1,
+          "question": "Why is it important to distinguish the core intention from supporting information?",
+          "expected_answer": "Supporting information provides context, evidence, explanations, or examples, but the core intention expresses the author’s main purpose.",
+          "guidance": "Emphasize that supporting details can be useful without being the main intention."
+        }
       ]
     },
     {
@@ -138,6 +152,20 @@
           "correct_sentence": 1,
           "reason": "This sentence best preserves the author’s central intention when the other sentences are removed."
         }
+      ],
+      "instruction_checks": [
+        {
+          "after_paragraph": 0,
+          "question": "Why might intuition alone be insufficient when choosing the main sentence?",
+          "expected_answer": "In longer or more complicated texts, an apparently important sentence may not best express the author’s core intention.",
+          "guidance": "Connect this to the need for a systematic way to check which sentence is most important."
+        },
+        {
+          "after_paragraph": 1,
+          "question": "How does the Deletion Test help identify the main sentence?",
+          "expected_answer": "Compare keeping only a candidate sentence with deleting that sentence and keeping the rest. The main sentence preserves the core intention on its own, while removing it loses that intention.",
+          "guidance": "Explain both sides of the comparison and focus on preserving the author’s core intention."
+        }
       ]
     },
     {
@@ -185,6 +213,26 @@
           "correct_paragraph": 3,
           "correct_sentence": 4,
           "reason": "The main paragraph expresses the overall claim; the selected sentence most directly communicates that claim."
+        }
+      ],
+      "instruction_checks": [
+        {
+          "after_paragraph": 1,
+          "question": "Why might applying the Deletion Test to every sentence at once be difficult in a long text?",
+          "expected_answer": "Long texts contain many sentences and layers of structure, so comparing all sentences at once becomes overwhelming.",
+          "guidance": "Connect the problem to the hierarchical organization of longer texts."
+        },
+        {
+          "after_paragraph": 4,
+          "question": "When applying the Deletion Test to a longer text, what should you identify first, and what comes next?",
+          "expected_answer": "First identify the main paragraph, then identify the main sentence within that paragraph.",
+          "guidance": "Emphasize the two-level sequence: paragraph first, sentence second."
+        },
+        {
+          "after_paragraph": 5,
+          "question": "Before applying the Deletion Test to the paragraphs, what should you do with the whole text?",
+          "expected_answer": "Read or skim the whole text to get an initial sense of its structure and the author’s core intention, then use the Deletion Test to check that impression.",
+          "guidance": "Explain that the initial impression is provisional and should be checked rather than assumed correct."
         }
       ]
     }
