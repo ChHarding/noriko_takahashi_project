@@ -78,7 +78,11 @@ def select_buttons(title, options, selected, key_prefix, disabled=False):
             disabled=disabled,
         ):
             clicked = i
-    return clicked if clicked is not None else selected
+    if clicked is not None and clicked != selected:
+        # Streamlit reruns the whole page on the next interaction; every choice
+        # remains in the tree because we rendered the full loop above.
+        return clicked
+    return selected
 
 def get_sentences(text):
     import re
@@ -152,15 +156,29 @@ if s.view=='instruction':
             st.divider()
             st.markdown('**Question**')
             st.write(step['question'])
-            if i < pos:
+            if i < pos or (i == pos and i in responses):
                 saved = responses[i]
-                st.markdown('**Your answer:** ' + saved['display'])
-                st.markdown('**AI tutor:** ' + saved['reply'])
-            elif i == pos:
-                if i in responses:
-                    saved = responses[i]
-                    st.markdown('**Your answer:** ' + saved['display'])
-                    st.markdown('**AI tutor:** ' + saved['reply'])
+                input_type = step['input_type']
+                if input_type in ('sentence_reason', 'choice', 'yes_no'):
+                    options = step.get('options', ['Yes', 'No'])
+                    select_buttons('Your selection', options, saved.get('selection'),
+                                   f'instruction_review_{s.part}_{i}', disabled=True)
+                if input_type in ('text', 'sentence_reason'):
+                    st.text_area(
+                        'Why? Explain your answer' if input_type == 'sentence_reason' else 'Your answer',
+                        value=saved.get('reason', ''),
+                        key=f'instruction_review_text_{s.part}_{i}',
+                        height=110, disabled=True
+                    )
+                correct_choice = step.get('correct_selection')
+                if correct_choice is not None:
+                    st.markdown('**Your answer:** ' +
+                                ('Correct' if saved.get('selection') == correct_choice else 'Incorrect'))
+                    options = step.get('options', ['Yes', 'No'])
+                    st.markdown('**Correct choice:** ' + options[correct_choice - 1])
+                st.markdown('**Instructor explanation:** ' + step.get('expected_answer', ''))
+                st.markdown('**AI tutor feedback:** ' + saved['reply'])
+                if i == pos:
                     if st.button('Continue', type='primary', key=f'instruction_continue_{s.part}_{i}'):
                         next_pos = i + 1
                         while next_pos < len(steps) and steps[next_pos]['type'] != 'question':
@@ -243,9 +261,14 @@ elif s.view=='practice':
         if chosen is not None:
             sentences=get_sentences(item['paragraphs'][chosen-1])
             s.sentence=select_buttons('Select the main sentence in that paragraph',sentences,s.sentence,item['id']+'_sent',disabled=s.submitted)
+    if s.condition in (3,4):
+        if s.submitted:
+            st.text_area('Why did you choose this answer?', value=s.reasoning,
+                         key=f'reason_review_{item["id"]}', height=110, disabled=True)
+        else:
+            s.reasoning=st.text_area('Why did you choose this answer?',
+                                     key=f'reason_{item["id"]}',height=110)
     if not s.submitted:
-        if s.condition in (3,4):
-            s.reasoning=st.text_area('Why did you choose this answer?',value=s.reasoning,key=f'reason_{item["id"]}',height=110)
         ready=s.selection is not None and (item['kind']=='sentence' or s.sentence is not None) and (s.condition not in (3,4) or bool(s.reasoning.strip()))
         if st.button('Done',type='primary',disabled=not ready,key=f'done_{item["id"]}'):
             correct=selected_correct(item)
@@ -268,7 +291,7 @@ elif s.view=='practice':
         st.markdown('**Your answer:** '+('Correct' if selected_correct(item) else 'Incorrect'))
         st.markdown('**Correct answer:** '+answer_key(item))
         if s.condition in (2,3,4):
-            st.markdown('**Reason:** '+item['reason'])
+            st.markdown('**Instructor explanation:** '+item['reason'])
         if s.condition==4:
             st.markdown('**Feedback on your explanation:** '+s.get('personalized',''))
         if st.button('Next Item',type='primary',key=f'next_{item["id"]}'):
