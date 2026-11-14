@@ -289,7 +289,7 @@ elif s.view=='practice':
                 except Exception as exc:
                     st.error(f'Feedback unavailable: {exc}');st.stop()
             s.submitted=True
-            track('practice_feedback_ready',item=item['id'],condition=s.condition)
+            track('practice_feedback_ready', item=item['id'])
             st.rerun()
     else:
         st.divider()
