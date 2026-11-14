@@ -33,7 +33,7 @@ def init(condition):
     st.session_state.update(pid=str(uuid.uuid4()), condition=condition, started=True,
       part=0, view='instruction', instruction_done=[False]*3, practice_indices=[0]*3,
       submitted=False, selection=None, sentence=None, reasoning='', instruction_reply=None,
-      instruction_answer='', instruction_sent=[False]*3, instruction_positions=[0]*3, instruction_responses=[[] for _ in range(3)], completed=False, test_answers={})
+      instruction_answer='', instruction_sent=[False]*3, instruction_positions=[0]*3, instruction_responses=[{} for _ in range(3)], completed=False, test_answers={})
     track('session_started')
 
 def track(name,**details):
@@ -118,65 +118,91 @@ st.progress(completed/total,text=f'Course progress · {completed} of {total} act
 
 if s.view=='instruction':
     st.title(f'Part {s.part+1}. {part["title"]}')
-    st.caption('Read the instruction and respond to the tutor. Previous conversations stay visible when you return.')
-    checks = part.get('instruction_checks', [])
+    st.caption('Read the lesson and respond to the original questions in the instructor document. You can return here from Practice Items.')
+    steps = part['instruction_steps']
     pos = s.instruction_positions[s.part]
     responses = s.instruction_responses[s.part]
-
-    # Display material only up to the current checkpoint; keep previous Q&A visible.
-    last_paragraph = checks[pos]['after_paragraph'] if pos < len(checks) else len(part['instruction']) - 1
-    for i, paragraph in enumerate(part['instruction']):
-        if i > last_paragraph:
+    # Render all completed lesson steps; retain the learner's choices and tutor replies.
+    question_index = 0
+    for i, step in enumerate(steps):
+        if i > pos:
             break
-        if paragraph:
-            st.write(paragraph)
-        for j in range(min(pos, len(responses))):
-            if checks[j]['after_paragraph'] == i:
-                st.markdown('**AI Tutor:** ' + checks[j]['question'])
-                st.markdown('**Your answer:** ' + responses[j]['answer'])
-                st.markdown('**Tutor response:** ' + responses[j]['reply'])
-                st.divider()
-
-    if pos < len(checks):
-        check = checks[pos]
+        kind = step['type']
+        if kind == 'text':
+            st.write(step['text'])
+        elif kind == 'example':
+            st.subheader('Example: ' + step['title'])
+            st.write(step['text'])
+        elif kind == 'explanation':
+            st.markdown('**Instructor explanation**')
+            st.write(step['text'])
+        elif kind == 'question':
+            st.divider()
+            st.markdown('**Question**')
+            st.write(step['question'])
+            if i < pos:
+                saved = responses[i]
+                st.markdown('**Your answer:** ' + saved['display'])
+                st.markdown('**AI tutor:** ' + saved['reply'])
+            elif i == pos:
+                if i in responses:
+                    saved = responses[i]
+                    st.markdown('**Your answer:** ' + saved['display'])
+                    st.markdown('**AI tutor:** ' + saved['reply'])
+                    if st.button('Continue', type='primary', key=f'instruction_continue_{s.part}_{i}'):
+                        s.instruction_positions[s.part] += 1
+                        st.rerun()
+                else:
+                    choice = None
+                    if step['input_type'] in ('sentence_reason', 'choice', 'yes_no'):
+                        opts = step.get('options', ['Yes', 'No'])
+                        choice = select_buttons('Select your answer', opts,
+                            s.get(f'instruction_choice_{s.part}_{i}'),
+                            f'instruction_option_{s.part}_{i}')
+                        s[f'instruction_choice_{s.part}_{i}'] = choice
+                    answer = ''
+                    if step['input_type'] in ('text', 'sentence_reason'):
+                        answer = st.text_area('Why? Explain your answer' if step['input_type']=='sentence_reason' else 'Your answer',
+                            key=f'instruction_text_{s.part}_{i}', height=110)
+                    ready = (choice is not None if step['input_type'] in ('choice','yes_no') else
+                             bool(answer.strip()) if step['input_type']=='text' else
+                             choice is not None and bool(answer.strip()))
+                    if st.button('Done', type='primary', disabled=not ready,
+                                 key=f'instruction_done_{s.part}_{i}'):
+                        opts = step.get('options', ['Yes','No'])
+                        selected_label = opts[choice-1] if choice is not None else ''
+                        display = (f'{selected_label} — {answer}' if choice is not None and answer.strip()
+                                   else selected_label or answer)
+                        key = st.secrets.get('GROQ_API_KEY', '')
+                        if not key:
+                            st.error('GROQ_API_KEY is missing from Streamlit secrets.')
+                            st.stop()
+                        check = dict(step)
+                        check['guidance'] = step.get('guidance','')
+                        check['expected_answer'] = step['expected_answer']
+                        check['selected_choice'] = selected_label
+                        check['correct_selection'] = step.get('correct_selection')
+                        with st.spinner('Tutor responding...'):
+                            try:
+                                reply = instructional_reply(key, part, check, display)
+                            except Exception as exc:
+                                st.error(f'Tutor unavailable: {type(exc).__name__}: {exc}')
+                                st.stop()
+                        if not reply.strip():
+                            st.error('Tutor returned an empty response. Please try again.')
+                            st.stop()
+                        responses[i] = {'display':display,'reply':reply,'selection':choice,'reason':answer}
+                        track('instruction_answer',part=s.part+1,step=i,answer=display)
+                        track('instruction_feedback',part=s.part+1,step=i,response=reply)
+                        st.rerun()
+            question_index += 1
+    if pos < len(steps) and steps[pos]['type'] != 'question':
+        if st.button('Continue', type='primary', key=f'instruction_step_{s.part}_{pos}'):
+            s.instruction_positions[s.part] += 1
+            st.rerun()
+    elif pos >= len(steps):
         st.divider()
-        st.subheader(f'Tutor question {pos+1} of {len(checks)}')
-        st.write(check['question'])
-        if len(responses) == pos:
-            answer = st.text_area('Your answer', key=f'instruction_input_{s.part}_{pos}', height=110)
-            if st.button('Done', type='primary', disabled=not answer.strip(), key=f'instruction_done_{s.part}_{pos}'):
-                key = st.secrets.get('GROQ_API_KEY', '')
-                if not key:
-                    st.error('GROQ_API_KEY is missing from Streamlit secrets.')
-                    st.stop()
-                try:
-                    with st.spinner('Tutor responding...'):
-                        reply = instructional_reply(key, part, check, answer)
-                except Exception as exc:
-                    st.error(f'Tutor unavailable: {exc}')
-                    st.stop()
-                if not reply or not reply.strip():
-                    st.error('The tutor returned an empty response. Please try again.')
-                    st.stop()
-                responses.append({'answer': answer, 'reply': reply})
-                track('instruction_answer', part=s.part+1, checkpoint=pos+1, response=answer)
-                track('instruction_feedback', part=s.part+1, checkpoint=pos+1, response=reply)
-                st.rerun()
-        else:
-            st.markdown('**Your answer:** ' + responses[pos]['answer'])
-            st.markdown('**Tutor response:** ' + responses[pos]['reply'])
-            if st.button('Continue', type='primary', key=f'instruction_continue_{s.part}_{pos}'):
-                s.instruction_positions[s.part] += 1
-                st.rerun()
-    else:
-        for example in part['example']:
-            st.subheader('Worked example · ' + example['title'])
-            st.write(example['text'])
-            st.markdown('**Answer:** ' + example['answer'])
-            st.write(example['explanation'])
-        st.divider()
-        st.markdown('**AI Tutor:** You have completed Part ' + str(s.part+1) +
-                    ' instruction. Go to Practice Items and complete the activities. You can return here to reread the instruction and tutor conversations.')
+        st.markdown(f'**AI Tutor:** You have completed Part {s.part+1} instruction. Go to Practice Items and complete the activities. You can return here to reread the instruction and tutor conversations.')
         if st.button('Go to Practice Items', type='primary'):
             if not s.instruction_done[s.part]:
                 s.instruction_done[s.part] = True
