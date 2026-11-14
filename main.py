@@ -33,7 +33,7 @@ def init(condition):
     st.session_state.update(pid=str(uuid.uuid4()), condition=condition, started=True,
       part=0, view='instruction', instruction_done=[False]*3, practice_indices=[0]*3,
       submitted=False, selection=None, sentence=None, reasoning='', instruction_reply=None,
-      instruction_answer='', instruction_sent=[False]*3, completed=False, test_answers={})
+      instruction_answer='', instruction_sent=[False]*3, instruction_positions=[0]*3, instruction_responses=[[] for _ in range(3)], completed=False, test_answers={})
     track('session_started')
 
 def track(name,**details):
@@ -118,36 +118,70 @@ st.progress(completed/total,text=f'Course progress · {completed} of {total} act
 
 if s.view=='instruction':
     st.title(f'Part {s.part+1}. {part["title"]}')
-    st.info('Read the instructional material below. When finished, answer the tutor’s question and click Done. You can return here from Practice Items at any time.')
-    for paragraph in part['instruction']:
-        if paragraph:st.write(paragraph)
-    for example in part['example']:
-        st.subheader('Worked example · '+example['title'])
-        st.write(example['text'])
-        st.markdown('**Answer:** '+example['answer'])
-        st.write(example['explanation'])
-    st.divider()
-    st.subheader('Tutor check')
-    st.write('In your own words, what is the author’s core intention, and how would you identify the main sentence or paragraph?')
-    if not s.instruction_sent[s.part]:
-        answer=st.text_area('Your response',key=f'instruction_response_{s.part}',height=100)
-        if st.button('Done',type='primary',disabled=not answer.strip(),key=f'instruction_done_{s.part}'):
-            s.instruction_answer=answer
-            track('instruction_answer',part=s.part+1,response=answer)
-            try:
-                key=st.secrets.get('GROQ_API_KEY','')
-                if not key:raise RuntimeError('Set GROQ_API_KEY in .streamlit/secrets.toml')
-                with st.spinner('Tutor responding...'):reply=instructional_reply(key,part,answer)
-            except Exception as exc:
-                st.error(f'Tutor unavailable: {exc}');st.stop()
-            s.instruction_reply=reply;s.instruction_sent[s.part]=True
-            if not s.instruction_done[s.part]:s.instruction_done[s.part]=True
-            track('instruction_feedback',part=s.part+1,response=reply)
-            st.rerun()
+    st.caption('Read the instruction and respond to the tutor. Previous conversations stay visible when you return.')
+    checks = part.get('instruction_checks', [])
+    pos = s.instruction_positions[s.part]
+    responses = s.instruction_responses[s.part]
+
+    # Display material only up to the current checkpoint; keep previous Q&A visible.
+    last_paragraph = checks[pos]['after_paragraph'] if pos < len(checks) else len(part['instruction']) - 1
+    for i, paragraph in enumerate(part['instruction']):
+        if i > last_paragraph:
+            break
+        if paragraph:
+            st.write(paragraph)
+        for j in range(min(pos, len(responses))):
+            if checks[j]['after_paragraph'] == i:
+                st.markdown('**AI Tutor:** ' + checks[j]['question'])
+                st.markdown('**Your answer:** ' + responses[j]['answer'])
+                st.markdown('**Tutor response:** ' + responses[j]['reply'])
+                st.divider()
+
+    if pos < len(checks):
+        check = checks[pos]
+        st.divider()
+        st.subheader(f'Tutor question {pos+1} of {len(checks)}')
+        st.write(check['question'])
+        if len(responses) == pos:
+            answer = st.text_area('Your answer', key=f'instruction_input_{s.part}_{pos}', height=110)
+            if st.button('Done', type='primary', disabled=not answer.strip(), key=f'instruction_done_{s.part}_{pos}'):
+                key = st.secrets.get('GROQ_API_KEY', '')
+                if not key:
+                    st.error('GROQ_API_KEY is missing from Streamlit secrets.')
+                    st.stop()
+                try:
+                    with st.spinner('Tutor responding...'):
+                        reply = instructional_reply(key, part, check, answer)
+                except Exception as exc:
+                    st.error(f'Tutor unavailable: {exc}')
+                    st.stop()
+                if not reply or not reply.strip():
+                    st.error('The tutor returned an empty response. Please try again.')
+                    st.stop()
+                responses.append({'answer': answer, 'reply': reply})
+                track('instruction_answer', part=s.part+1, checkpoint=pos+1, response=answer)
+                track('instruction_feedback', part=s.part+1, checkpoint=pos+1, response=reply)
+                st.rerun()
+        else:
+            st.markdown('**Your answer:** ' + responses[pos]['answer'])
+            st.markdown('**Tutor response:** ' + responses[pos]['reply'])
+            if st.button('Continue', type='primary', key=f'instruction_continue_{s.part}_{pos}'):
+                s.instruction_positions[s.part] += 1
+                st.rerun()
     else:
-        st.markdown('**Tutor:** '+(s.instruction_reply or ''))
-        st.success(f'You have completed Part {s.part+1} instruction. Go to Practice Items and complete the activities. You can return here to reread the instruction.')
-        if st.button('Go to Practice Items',type='primary'):go('practice')
+        for example in part['example']:
+            st.subheader('Worked example · ' + example['title'])
+            st.write(example['text'])
+            st.markdown('**Answer:** ' + example['answer'])
+            st.write(example['explanation'])
+        st.divider()
+        st.markdown('**AI Tutor:** You have completed Part ' + str(s.part+1) +
+                    ' instruction. Go to Practice Items and complete the activities. You can return here to reread the instruction and tutor conversations.')
+        if st.button('Go to Practice Items', type='primary'):
+            if not s.instruction_done[s.part]:
+                s.instruction_done[s.part] = True
+                track('instruction_completed', part=s.part+1)
+            go('practice')
 
 elif s.view=='practice':
     index=s.practice_indices[s.part]
