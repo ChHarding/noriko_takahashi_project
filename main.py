@@ -9,7 +9,8 @@ from tutor import instructional_reply, personalized_feedback
 st.set_page_config(page_title='SourceWrite ITS', layout='wide', initial_sidebar_state='collapsed')
 st.markdown('''<style>
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {background:#0e0e0e;color:#f3f3f3}
-.block-container {max-width:1060px;padding-top:2rem;padding-bottom:5rem}
+/* Extra clearance below Streamlit toolbar so navigation tabs remain visible. */
+[data-testid="stMainBlockContainer"], .block-container {max-width:1060px!important;padding-top:7rem!important;padding-bottom:5rem!important}
 h1,h2,h3,p,li,label {color:#f2f2f2!important}
 .stButton>button {border-radius:5px;min-height:40px}
 .stButton>button[kind="primary"] {background:#e6e6e6;color:#151515;border:0}
