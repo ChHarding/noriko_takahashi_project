@@ -1,15 +1,13 @@
-"""Single-column Streamlit ITS. Run: streamlit run main.py"""
+"""SourceWrite course-project demonstration. Run: streamlit run main.py"""
 import json
 import uuid
+from pathlib import Path
 import streamlit as st
-from answer_handler import normalize_answer, is_correct
 from logger import log_event
-from module_engine import load_module
-from tutor import instructional_reply, generate_feedback
+from tutor import instructional_reply, personalized_feedback
 
 st.set_page_config(page_title='SourceWrite ITS', layout='wide', initial_sidebar_state='collapsed')
-st.markdown("""
-<style>
+st.markdown('''<style>
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {background:#0e0e0e;color:#f3f3f3}
 .block-container {max-width:1060px;padding-top:2rem;padding-bottom:5rem}
 h1,h2,h3,p,li,label {color:#f2f2f2!important}
@@ -20,8 +18,7 @@ h1,h2,h3,p,li,label {color:#f2f2f2!important}
 [data-testid="stTextArea"] textarea {background:#1d1d1d;color:#fff}
 div[data-testid="stVerticalBlockBorderWrapper"] {border-color:#353535}
 hr {border-color:#333}
-</style>
-""", unsafe_allow_html=True)
+</style>''', unsafe_allow_html=True)
 COURSE=json.loads((Path(__file__).parent/'modules'/'course.json').read_text(encoding='utf-8'))
 PARTS=COURSE['parts']
 
