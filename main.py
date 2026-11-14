@@ -23,7 +23,7 @@ div.stButton > button[kind="primary"]:hover,
 div.stButton > button[kind="primary"]:focus {background-color: #E5E5E5 !important;color: #111111 !important;border-color: #E5E5E5 !important;}
 div.stButton > button[kind="primary"] p {color: #111111 !important;}
 div.stButton > button[kind="primary"]:disabled {background-color: #555555 !important;color: #BBBBBB !important;border-color: #555555 !important;}
-.stAppViewContainer .main .block-container {padding-top: 8rem !important;}
+[data-testid="stMainBlockContainer"] {padding-top: 7rem !important;
 </style>''', unsafe_allow_html=True)
 COURSE=json.loads((Path(__file__).parent/'modules'/'course.json').read_text(encoding='utf-8'))
 PARTS=COURSE['parts']
