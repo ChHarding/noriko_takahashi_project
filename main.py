@@ -121,6 +121,11 @@ if s.view=='instruction':
     st.caption('Read the lesson and respond to the original questions in the instructor document. You can return here from Practice Items.')
     steps = part['instruction_steps']
     pos = s.instruction_positions[s.part]
+    # Automatically reveal consecutive reading/explanation steps.
+    # Stop only when the next original instructor question requires a response.
+    while pos < len(steps) and steps[pos]['type'] != 'question':
+        pos += 1
+    s.instruction_positions[s.part] = pos
     responses = s.instruction_responses[s.part]
     # Render all completed lesson steps; retain the learner's choices and tutor replies.
     question_index = 0
@@ -150,7 +155,10 @@ if s.view=='instruction':
                     st.markdown('**Your answer:** ' + saved['display'])
                     st.markdown('**AI tutor:** ' + saved['reply'])
                     if st.button('Continue', type='primary', key=f'instruction_continue_{s.part}_{i}'):
-                        s.instruction_positions[s.part] += 1
+                        next_pos = i + 1
+                        while next_pos < len(steps) and steps[next_pos]['type'] != 'question':
+                            next_pos += 1
+                        s.instruction_positions[s.part] = next_pos
                         st.rerun()
                 else:
                     choice = None
@@ -196,11 +204,7 @@ if s.view=='instruction':
                         track('instruction_feedback',part=s.part+1,step=i,response=reply)
                         st.rerun()
             question_index += 1
-    if pos < len(steps) and steps[pos]['type'] != 'question':
-        if st.button('Continue', type='primary', key=f'instruction_step_{s.part}_{pos}'):
-            s.instruction_positions[s.part] += 1
-            st.rerun()
-    elif pos >= len(steps):
+    if pos >= len(steps):
         st.divider()
         st.markdown(f'**AI Tutor:** You have completed Part {s.part+1} instruction. Go to Practice Items and complete the activities. You can return here to reread the instruction and tutor conversations.')
         if st.button('Go to Practice Items', type='primary'):
