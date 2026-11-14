@@ -64,14 +64,21 @@ def selected_correct(item):
     if item['kind']=='sentence':return s.selection==item['correct_sentence']
     return s.selection==item['correct_paragraph'] and s.sentence==item['correct_sentence']
 
-def select_buttons(title,options,selected,key_prefix,disabled=False):
-    st.markdown('**'+title+'**')
-    for i,text in enumerate(options,1):
-        label=f'{i}. {text}'
-        if st.button(label,key=f'{key_prefix}_{i}',use_container_width=True,
-                     type='primary' if selected==i else 'secondary', disabled=disabled):
-            return i
-    return selected
+def select_buttons(title, options, selected, key_prefix, disabled=False):
+    st.markdown('**' + title + '**')
+    clicked = None
+    # Always create every button, even when one is clicked.
+    # Returning inside this loop caused later choices to disappear.
+    for i, text in enumerate(options, 1):
+        if st.button(
+            f'{i}. {text}',
+            key=f'{key_prefix}_{i}',
+            use_container_width=True,
+            type='primary' if selected == i else 'secondary',
+            disabled=disabled,
+        ):
+            clicked = i
+    return clicked if clicked is not None else selected
 
 def get_sentences(text):
     import re
