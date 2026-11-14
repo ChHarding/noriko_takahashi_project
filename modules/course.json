@@ -69,18 +69,48 @@
           "reason": "The selected sentence best communicates the author’s core intention, rather than merely supplying background or supporting details."
         }
       ],
-      "instruction_checks": [
+      "instruction_steps": [
         {
-          "after_paragraph": 0,
-          "question": "In your own words, what is an author’s core intention?",
-          "expected_answer": "What the author wants the audience to do, feel, or think.",
-          "guidance": "Accept paraphrases; distinguish the author’s intention from the topic of the text."
+          "type": "text",
+          "text": "The first thing we will learn is that each text is intentional. By that we mean that the author of the text wants their audience to arrive somewhere: a specific action, or a new understanding, or a changed belief. The author’s intention is to make their audience do, feel, or think something."
         },
         {
-          "after_paragraph": 1,
-          "question": "Why is it important to distinguish the core intention from supporting information?",
-          "expected_answer": "Supporting information provides context, evidence, explanations, or examples, but the core intention expresses the author’s main purpose.",
-          "guidance": "Emphasize that supporting details can be useful without being the main intention."
+          "type": "text",
+          "text": "But authors rarely state that intention by itself. They surround their intention with support which can be in the form of context, evidence, explanation, or examples. Our goal is to learn how to separate the core intention of the author from the supporting material that helps that intention succeed."
+        },
+        {
+          "type": "example",
+          "title": "Store Announcement",
+          "text": "All shoppers please proceed to the checkout line at this time. This store is now closed. Thank you for shopping at Walmart!"
+        },
+        {
+          "type": "question",
+          "question": "Select the one sentence that represents the core intention of the author. Which sentence did you circle? Why?",
+          "input_type": "sentence_reason",
+          "expected_answer": "Sentence 1. The author wants shoppers to proceed to checkout.",
+          "guidance": "Sentence 2 supplies context/justification; Sentence 3 is a politeness formula.",
+          "options": [
+            "All shoppers please proceed to the checkout line at this time.",
+            "This store is now closed.",
+            "Thank you for shopping at Walmart!"
+          ],
+          "correct_selection": 1
+        },
+        {
+          "type": "explanation",
+          "text": "Sentence 1: “All shoppers please proceed to the checkout line at this time,” because the core intention of the author is to encourage shoppers to go to checkout. Sentence 2 provides context and justification for the request, and sentence 3 is a politeness formula. They support the core intention."
+        },
+        {
+          "type": "text",
+          "text": "First, texts are not “flat”; they are not just “bullet point lists” of sentences. Texts have a hierarchy. Not every sentence carries the same amount of weight. Some sentences are more important than others."
+        },
+        {
+          "type": "text",
+          "text": "Second, every text has a core intention. The core intention is what the author wants their audience to do, to feel, or to think after reading the text. It is the primary action, thought, or opinion that the author wants their audience to walk away with."
+        },
+        {
+          "type": "text",
+          "text": "Finally, the rest of the text exists to support that core intention. By trusting your intuition and reading strategically, you can efficiently find the author's core intention in the text."
         }
       ]
     },
@@ -153,18 +183,102 @@
           "reason": "This sentence best preserves the author’s central intention when the other sentences are removed."
         }
       ],
-      "instruction_checks": [
+      "instruction_steps": [
         {
-          "after_paragraph": 0,
-          "question": "Why might intuition alone be insufficient when choosing the main sentence?",
-          "expected_answer": "In longer or more complicated texts, an apparently important sentence may not best express the author’s core intention.",
-          "guidance": "Connect this to the need for a systematic way to check which sentence is most important."
+          "type": "text",
+          "text": "That instinct to scan for the most important information is exactly how strong readers tackle texts. But when texts get longer or trickier, intuition alone can sometimes lead us to the wrong sentence. We need a way to quickly spot the best sentence, and then prove that it is the right one."
         },
         {
-          "after_paragraph": 1,
-          "question": "How does the Deletion Test help identify the main sentence?",
-          "expected_answer": "Compare keeping only a candidate sentence with deleting that sentence and keeping the rest. The main sentence preserves the core intention on its own, while removing it loses that intention.",
-          "guidance": "Explain both sides of the comparison and focus on preserving the author’s core intention."
+          "type": "text",
+          "text": "To do this, we use the Deletion Test. This is a pairwise comparison: we look at what happens if we delete the rest of the text, versus what happens if we delete our candidate sentence. If we keep only the Main Sentence and delete everything else, the author's core intention will still survive. On the flip side, if we delete the Main Sentence and keep everything else, the core intention will be lost. This strategy works because the Main Sentence always carries the heaviest weight of the author's core intention."
+        },
+        {
+          "type": "example",
+          "title": "Tornado Warning",
+          "text": "(1) This is a tornado warning. (2) Conditions outside have become dangerous. (3) Seek shelter in a sturdy building immediately. (4) Do not stop to take any belongings with you."
+        },
+        {
+          "type": "question",
+          "question": "Before we do anything else, what is the author’s core intention behind this text? Tell me in your own words, what is the author trying to make their audience do?",
+          "input_type": "text",
+          "expected_answer": "The core intention is to make people take immediate physical cover.",
+          "guidance": "The intended action is seeking shelter immediately."
+        },
+        {
+          "type": "text",
+          "text": "Now let’s apply the Deletion Test. We will compare two parts of the text side-by-side. In comparison (1), we are comparing the first sentence against the rest of the text. Which of the two options is more closely aligned with the author’s core intention?"
+        },
+        {
+          "type": "question",
+          "question": "Comparison 1: Which option is more closely aligned with the author’s core intention?",
+          "input_type": "choice",
+          "expected_answer": "Option B. Option B. While you can infer what you should do from Sentence 1, it requires background knowledge about tornadoes. The audience of the announcement includes everyone currently in the area, including those who may be visiting from other places where tornadoes are not as common. Option B will achieve the core intention better than Option A.",
+          "guidance": "Option B. While you can infer what you should do from Sentence 1, it requires background knowledge about tornadoes. The audience of the announcement includes everyone currently in the area, including those who may be visiting from other places where tornadoes are not as common. Option B will achieve the core intention better than Option A.",
+          "options": [
+            "Option A. This is a tornado warning.",
+            "Option B. Conditions outside have become dangerous. Seek shelter in a sturdy building immediately. Do not stop to take any belongings with you."
+          ],
+          "correct_selection": 2
+        },
+        {
+          "type": "explanation",
+          "text": "Option B. While you can infer what you should do from Sentence 1, it requires background knowledge about tornadoes. The audience of the announcement includes everyone currently in the area, including those who may be visiting from other places where tornadoes are not as common. Option B will achieve the core intention better than Option A."
+        },
+        {
+          "type": "text",
+          "text": "For the sake of practice, let’s continue testing the remaining sentences. A sentence passes the Deletion Test if it carries more weight than the rest of the text (so Option A is more aligned with the core intention than Option B)."
+        },
+        {
+          "type": "question",
+          "question": "Comparison 2: Which option is more closely aligned with the author’s core intention?",
+          "input_type": "choice",
+          "expected_answer": "Option B. Option B. With Option A, the audience would understand there is an emergency, but they are not told what action to take. Sentence 2 supports the message but fails the Deletion Test.",
+          "guidance": "Option B. With Option A, the audience would understand there is an emergency, but they are not told what action to take. Sentence 2 supports the message but fails the Deletion Test.",
+          "options": [
+            "Option A. Conditions outside have become dangerous.",
+            "Option B. This is a tornado warning. Seek shelter in a sturdy building immediately. Do not stop to take any belongings with you."
+          ],
+          "correct_selection": 2
+        },
+        {
+          "type": "explanation",
+          "text": "Option B. With Option A, the audience would understand there is an emergency, but they are not told what action to take. Sentence 2 supports the message but fails the Deletion Test."
+        },
+        {
+          "type": "question",
+          "question": "Comparison 3: Which option is more closely aligned with the author’s core intention?",
+          "input_type": "choice",
+          "expected_answer": "Option A. Option A. Even isolated from the rest of the text, Sentence 3 tells the audience exactly what action they must take to protect themselves. It successfully delivers the author’s core intention. This is our main sentence.",
+          "guidance": "Option A. Even isolated from the rest of the text, Sentence 3 tells the audience exactly what action they must take to protect themselves. It successfully delivers the author’s core intention. This is our main sentence.",
+          "options": [
+            "Option A. Seek shelter in a sturdy building immediately.",
+            "Option B. This is a tornado warning. Conditions outside have become dangerous. Do not stop to take any belongings with you."
+          ],
+          "correct_selection": 1
+        },
+        {
+          "type": "explanation",
+          "text": "Option A. Even isolated from the rest of the text, Sentence 3 tells the audience exactly what action they must take to protect themselves. It successfully delivers the author’s core intention. This is our main sentence."
+        },
+        {
+          "type": "question",
+          "question": "Comparison 4: Which option is more closely aligned with the author’s core intention?",
+          "input_type": "choice",
+          "expected_answer": "Option B. Option B. Sentence 4 tells the audience not to stop to take any belongings, but it doesn't tell them to get to safety in the first place. It reinforces the urgency of the instruction, but it fails to stand alone.",
+          "guidance": "Option B. Sentence 4 tells the audience not to stop to take any belongings, but it doesn't tell them to get to safety in the first place. It reinforces the urgency of the instruction, but it fails to stand alone.",
+          "options": [
+            "Option A. Do not stop to take any belongings with you.",
+            "Option B. This is a tornado warning. Conditions outside have become dangerous. Seek shelter in a sturdy building immediately."
+          ],
+          "correct_selection": 2
+        },
+        {
+          "type": "explanation",
+          "text": "Option B. Sentence 4 tells the audience not to stop to take any belongings, but it doesn't tell them to get to safety in the first place. It reinforces the urgency of the instruction, but it fails to stand alone."
+        },
+        {
+          "type": "text",
+          "text": "Conclusion: By performing the Deletion Test, we have shown that Sentence 3 is the Main Sentence in this text."
         }
       ]
     },
@@ -215,24 +329,102 @@
           "reason": "The main paragraph expresses the overall claim; the selected sentence most directly communicates that claim."
         }
       ],
-      "instruction_checks": [
+      "instruction_steps": [
         {
-          "after_paragraph": 1,
-          "question": "Why might applying the Deletion Test to every sentence at once be difficult in a long text?",
-          "expected_answer": "Long texts contain many sentences and layers of structure, so comparing all sentences at once becomes overwhelming.",
-          "guidance": "Connect the problem to the hierarchical organization of longer texts."
+          "type": "text",
+          "text": "In the previous part, we used the Deletion Test to find the Main Sentence in a short text. We cut away all the supporting details to isolate the exact sentence that captured the author’s core intention."
         },
         {
-          "after_paragraph": 4,
-          "question": "When applying the Deletion Test to a longer text, what should you identify first, and what comes next?",
-          "expected_answer": "First identify the main paragraph, then identify the main sentence within that paragraph.",
-          "guidance": "Emphasize the two-level sequence: paragraph first, sentence second."
+          "type": "text",
+          "text": "But what happens when texts get longer? In college and your future career, you will rarely read just a single paragraph. You will read essays, reports, and articles. If you try to apply the Deletion Test to 50 sentences all at once, you will quickly get overwhelmed."
         },
         {
-          "after_paragraph": 5,
-          "question": "Before applying the Deletion Test to the paragraphs, what should you do with the whole text?",
-          "expected_answer": "Read or skim the whole text to get an initial sense of its structure and the author’s core intention, then use the Deletion Test to check that impression.",
-          "guidance": "Explain that the initial impression is provisional and should be checked rather than assumed correct."
+          "type": "text",
+          "text": "To tackle longer texts, we have to understand their structure. Longer texts are built in layers: they are organized into chapters, sections, and paragraphs. Today, we will apply the Deletion Test to longer essays by using the test twice:"
+        },
+        {
+          "type": "text",
+          "text": "first to find the most important paragraph,"
+        },
+        {
+          "type": "text",
+          "text": "and then to find the most important sentence inside it."
+        },
+        {
+          "type": "text",
+          "text": "First, read or skim the whole text to get an overall sense of its structure and the author’s Core Intention: what the author wants us to do, think, or feel. This is our initial impression, not our final answer. As we examine the text more closely, we will use the Deletion Test to check whether our initial understanding is correct."
+        },
+        {
+          "type": "example",
+          "title": "High School Start Times — Paragraph 1",
+          "text": "High schools should begin the school day later because students learn more effectively when they get enough sleep. Many teenagers do not naturally become tired early in the evening, which makes it difficult for them to get the recommended amount of rest before early morning classes. When students arrive at school exhausted, they may struggle to focus, participate, and remember important information. A later start time would create conditions that help students be healthier and more successful learners."
+        },
+        {
+          "type": "example",
+          "title": "High School Start Times — Paragraph 2",
+          "text": "One reason schools should start later is that additional sleep can improve students’ ability to concentrate in class. When students are well rested, they are more prepared to listen, solve problems, and complete challenging assignments. In contrast, students who begin the day while still tired may have difficulty paying attention or staying motivated. By allowing students more time to sleep, schools can help create classrooms where students are ready to learn."
+        },
+        {
+          "type": "example",
+          "title": "High School Start Times — Paragraph 3",
+          "text": "A later start time can also improve students’ overall well-being. Teenagers often balance schoolwork with activities, jobs, and family responsibilities, leaving them with limited time for sleep. When students consistently miss sleep, they may experience increased stress and have less energy throughout the day. Starting school later would give students a better opportunity to maintain a healthy routine, which can support both academic achievement and personal health."
+        },
+        {
+          "type": "question",
+          "question": "Let’s apply this to Text 1 on your handout. Read through it quickly. What is our initial impression of the author’s Core Intention? What is the author trying to achieve here?",
+          "input_type": "text",
+          "expected_answer": "The author wants to convince us that high schools need to start later so students can get enough sleep and perform better.",
+          "guidance": "Identify the overall argument about later school start times."
+        },
+        {
+          "type": "text",
+          "text": "Now find the most important paragraph with the Deletion Test. We have three paragraphs. Let’s test them."
+        },
+        {
+          "type": "question",
+          "question": "If we delete everything and keep ONLY Paragraph 2, does the reader get the whole message?",
+          "input_type": "yes_no",
+          "expected_answer": "No. Paragraph 2 just says sleep improves concentration. It doesn’t give the big picture.",
+          "guidance": "Paragraph 2 is a supporting reason.",
+          "correct_selection": 2
+        },
+        {
+          "type": "question",
+          "question": "What if we keep ONLY Paragraph 3?",
+          "input_type": "yes_no",
+          "expected_answer": "No. It just talks about well-being and stress. It is just another specific reason.",
+          "guidance": "Paragraph 3 supports the central claim.",
+          "correct_selection": 2
+        },
+        {
+          "type": "question",
+          "question": "What if we keep ONLY Paragraph 1?",
+          "input_type": "yes_no",
+          "expected_answer": "Yes. It sets up the whole argument about later start times, sleep, and better learning.",
+          "guidance": "Paragraph 1 presents the full argument.",
+          "correct_selection": 1
+        },
+        {
+          "type": "text",
+          "text": "Now let’s find the Main Sentence. We are only looking at Paragraph 1. Because Paragraph 1 is the most important paragraph for the author’s core intention, the Main Sentence will belong to that paragraph."
+        },
+        {
+          "type": "question",
+          "question": "Which sentence looks like it is best aligned with the author’s core intention? Does it pass the Deletion Test?",
+          "input_type": "sentence_reason",
+          "expected_answer": "Sentence 1: High schools should begin the school day later because students learn more effectively when they get enough sleep. Yes, it passes the Deletion Test.",
+          "guidance": "It states the proposed action and the reason even in isolation.",
+          "options": [
+            "High schools should begin the school day later because students learn more effectively when they get enough sleep.",
+            "Many teenagers do not naturally become tired early in the evening, which makes it difficult for them to get the recommended amount of rest before early morning classes.",
+            "When students arrive at school exhausted, they may struggle to focus, participate, and remember important information.",
+            "A later start time would create conditions that help students be healthier and more successful learners."
+          ],
+          "correct_selection": 1
+        },
+        {
+          "type": "explanation",
+          "text": "The first sentence: “High schools should begin the school day later because students learn more effectively when they get enough sleep.” Even completely alone, it tells the audience exactly what should happen (later start times) and why (better learning/sleep). It passes the Deletion Test."
         }
       ]
     }
